@@ -40,3 +40,35 @@ using Test
         end
     end
 end
+
+@testset "logaddexp at ties" begin
+    # `t` and `2t - 0.37` are exactly equal at `t = 0.37`
+    x0 = 0.37
+    fs = (
+        two_arguments = (t -> logaddexp(t, 2t - 0.37), 1.5),
+        # log(2cosh(t)), whose derivative tanh(t) vanishes at t = 0
+        symmetric = (t -> logaddexp(t - 0.37, 0.37 - t), 0.0),
+    )
+    @testset "$name" for (name, (f, dref)) in pairs(fs)
+        y = f(x0)
+
+        @test ForwardDiff.derivative(f, x0) ≈ dref
+
+        df, val = autodiff(ForwardWithPrimal, f, Duplicated(x0, 1.0))
+        @test val ≈ y
+        @test df ≈ dref
+        (df,), val = autodiff(ReverseWithPrimal, f, Active, Active(x0))
+        @test val ≈ y
+        @test df ≈ dref
+
+        @testset "Mooncake $mode" for (mode, prepare) in pairs((
+            forward = Mooncake.prepare_derivative_cache,
+            reverse = Mooncake.prepare_gradient_cache,
+        ))
+            cache = prepare(f, x0)
+            val, (_, df) = Mooncake.value_and_gradient!!(cache, f, x0)
+            @test val ≈ y
+            @test df ≈ dref
+        end
+    end
+end

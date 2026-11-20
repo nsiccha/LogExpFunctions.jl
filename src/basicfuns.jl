@@ -570,15 +570,16 @@ Return `log(exp(x) + exp(y))`, avoiding intermediate overflow/undeflow, and hand
 non-finite values.
 """
 function logaddexp(x::Real, y::Real)
-    # Compute max = Base.max(x, y) and diff = x == y ? zero(x - y) : -abs(x - y)
-    # in a faster type-stable way
+    # Compute max = Base.max(x, y) and diff = -abs(x - y) in a faster type-stable way
     a, b = promote(x, y)
     if a < b
         diff = a - b
         max = b
     else
         # ensure diff = 0 if a = b = ± Inf
-        diff = a == b ? zero(a - b) : b - a
+        # replacing only `NaN` keeps derivatives at ties (as in `logsumexp`, #128)
+        d = b - a
+        diff = isnan(d) ? zero(d) : d
         max = !isnan(b) ? a : b
     end
     return max + log1pexp(diff)
