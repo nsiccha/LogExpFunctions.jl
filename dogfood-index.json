@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "line": {
+    "repo": "nsiccha/LogExpFunctions.jl",
+    "ref": "dogfood",
+    "sha": "d1509b087bfff377c2fdb5b27a5ebb9f71b23c7f"
+  },
+  "upstream": {
+    "repo": "JuliaStats/LogExpFunctions.jl",
+    "ref": "master",
+    "sha": "f8d238c99d451aee64873ee2f84cbdaba2ff0773"
+  },
+  "problems": [
+    {
+      "id": "logaddexp-finite-ties",
+      "role": "fix",
+      "title": "Native reverse differentiation assigns the full logaddexp gradient to one input at finite ties",
+      "summary": "When x and y are equal and finite, the two partial derivatives of logaddexp(x, y) should both be one half. Keeping the difference between the inputs in the finite branch restores the correct derivatives while preserving the values at infinite ties.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/nsiccha/ReactiveKernels.jl/issues/41",
+          "relation": "reports"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "d1509b087bfff377c2fdb5b27a5ebb9f71b23c7f",
+            "title": "Preserve logaddexp derivatives at finite ties",
+            "original": [
+              "d1509b087bfff377c2fdb5b27a5ebb9f71b23c7f"
+            ]
+          }
+        ],
+        "why_together": "One commit changes the primal expression and adds an automatic differentiation regression."
+      },
+      "depends_on": [],
+      "requires": [],
+      "validation": [
+        {
+          "base": "f8d238c99d451aee64873ee2f84cbdaba2ff0773",
+          "julia": "1.12.7",
+          "tests": [
+            "test/ad/runtests.jl"
+          ],
+          "result": "passed",
+          "detail": "63 of 63 AD checks passed, including 18 logaddexp assertions with Enzyme 0.13.221, ForwardDiff 1.5.0 and Mooncake 0.5.72. The two-input Enzyme reverse gradient at (1.3, 1.3) was (0.5, 0.5). All 349 additional comparisons with the original primal matched, including mixed float widths, infinities, NaNs and integer inputs."
+        }
+      ]
+    }
+  ],
+  "prepared_at": "2026-11-20T09:22:51+00:00"
+}
